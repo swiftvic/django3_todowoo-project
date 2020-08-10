@@ -1,14 +1,49 @@
-from django.shortcuts import render
-from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from django.db import IntegrityError
+from django.contrib.auth import login, logout, authenticate
+
+def home(request):
+    return render(request, 'todo/home.html')
 
 def signupuser(request):
     if request.method == 'GET':
-        return render(request, 'todo/signupuser.html', {'form':UserCreationForm})
+        return render(request, 'todo/signupuser.html', {'form':UserCreationForm()})
     else:
-        # Create a new user
+        # Someone POSTed to the page
+        # Create a new user if the passwords match
         if request.POST['password1'] == request.POST['password2']:
-            user = User.objects.create_user(request.POST['username'], password=request.POST['password1'])
-            user.save()        
+            try:
+                user = User.objects.create_user(request.POST['username'], password=request.POST['password1'])
+                user.save()
+                login(request, user)
+                return redirect('currenttodos')
+            except IntegrityError:
+                #Username taken, return page with error
+                return render(request, 'todo/signupuser.html', {'form':UserCreationForm(), 'error':'Username taken'})
         else:
-            print("Password not match")
+            #Passwords did not match
+            return render(request, 'todo/signupuser.html', {'form':UserCreationForm(), 'error':'Passwords did not match.'})
+
+def loginuser(request):
+    if request.method == 'GET':
+        return render(request, 'todo/loginuser.html', {'form':AuthenticationForm()})
+    else:
+        # Someone POSTed to the page
+        user = authenticate(username = request.POST['username'], password = request.POST['password'])
+        if user is not None:
+            # Backend authenticated user
+            login(request, user)
+            return redirect('currenttodos')
+        else:
+            # Not authenticated
+            return render(request, 'todo/loginuser.html', {'form':AuthenticationForm(), 'error':'Username/Password does not match'} )
+
+def logoutuser(request):
+    if request.method == "POST":
+        logout(request)
+        return redirect('home')
+
+def currenttodos(request):
+    return render(request, 'todo/currenttodos.html')
