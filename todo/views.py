@@ -3,6 +3,8 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.contrib.auth import login, logout, authenticate
+from .forms import TodoForm
+from .models import Todo
 
 def home(request):
     return render(request, 'todo/home.html')
@@ -45,5 +47,20 @@ def logoutuser(request):
         logout(request)
         return redirect('home')
 
+def createtodo(request):
+    if request.method == "GET":
+        return render(request, 'todo/createtodo.html', {'form':TodoForm()})
+    else:
+        try:
+            form = TodoForm(request.POST)
+            newtodo = form.save(commit=False) # Do not save into DB yet, assign and create new object
+            newtodo.user = request.user # Add the username to the Todo
+            newtodo.save() # Now save entire form into DB
+            return redirect('currenttodos')
+        except ValueError:
+            # If length of text sumbitted is more than Chars specified in models
+            return render(request, 'todo/createtodo.html', {'form':TodoForm(), 'error':'Incorrect data passed in. Try again.'} )
+
 def currenttodos(request):
-    return render(request, 'todo/currenttodos.html')
+    todos = Todo.objects.filter(user=request.user, datecompleted__isnull=True)
+    return render(request, 'todo/currenttodos.html', {'todos':todos})
