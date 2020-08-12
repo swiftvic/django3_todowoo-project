@@ -6,16 +6,20 @@
 
 <ul>
     {% for todo in todos %}
-        <li>
-            {% if todo.important %}
-                <b>{{ todo.title }}</b>
-            {% else %}
-                {{ todo.title }}
-            {% endif %}
-            {% if todo.memo %}
-                - {{ todo.memo }}
-            {% endif %}
-        </li>
+        
+            <li>
+                <a href="{% url 'viewtodo' todo.pk %}">
+                    {% if todo.important %}
+                        <b>{{ todo.title }}</b>
+                    {% else %}
+                        {{ todo.title }}
+                    {% endif %}
+                    {% if todo.memo %}
+                        - {{ todo.memo }}
+                    {% endif %}
+                </a>
+            </li>
+        
     {% endfor %}
 </ul>
 
